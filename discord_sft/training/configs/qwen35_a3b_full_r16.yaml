@@ -1,0 +1,63 @@
+# Default-ish LoRA: all attention + MLP projections (including the MoE
+# fused gate_up_proj), all layers, rank 16. Closest to Unsloth's reference
+# Qwen3.5-35B-A3B recipe. Use as the baseline to compare late-layer style
+# runs against.
+run_name: full-r16
+
+model:
+  name: unsloth/Qwen3.5-35B-A3B
+  max_seq_length: 1024
+  load_in_16bit: true
+  enable_thinking: false
+  moe_backend: null
+
+data:
+  train_path: out/sft/train.jsonl
+  val_path: out/sft/val.jsonl
+  system_prompt_override: null
+
+lora:
+  r: 16
+  alpha: 16
+  dropout: 0.0
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+    - gate_up_proj
+  # Omitting layers_last_pct and layers_to_transform -> LoRA on every layer.
+  use_gradient_checkpointing: unsloth
+  random_state: 3407
+  bias: none
+
+train:
+  epochs: 1
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 2.0e-5
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  weight_decay: 0.01
+  bf16: true
+  fp16: false
+  seed: 3407
+  eval_strategy: epoch
+  logging_steps: 10
+  max_grad_norm: 1.0
+  allow_full_sequence_loss_fallback: false
+  wandb_enabled: false
+  wandb_project: discord-sft
+  wandb_entity: null
+  wandb_run_name: full-r16
+  wandb_tags: [full, baseline, lora]
+
+checkpoint:
+  output_dir: out/lora/full-r16
+  save_strategy: epoch
+  save_steps: null
+  save_total_limit: 3
+  save_final: true

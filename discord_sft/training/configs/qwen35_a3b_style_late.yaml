@@ -1,0 +1,62 @@
+# Style-focused LoRA: target the "write-out" projections on the last 25% of
+# layers.
+run_name: style-late-r16-a16-5epochs
+
+model:
+  name: unsloth/Qwen3.5-35B-A3B
+  max_seq_length: 1024
+  load_in_16bit: true
+  enable_thinking: false
+  moe_backend: null
+
+data:
+  train_path: out/sft/train.jsonl
+  val_path: out/sft/val.jsonl
+  system_prompt_override: null
+
+lora:
+  r: 16
+  alpha: 16
+  dropout: 0.0
+  target_modules: [up_proj, down_proj, gate_proj]
+  layers_last_pct: 0.25
+  use_gradient_checkpointing: unsloth
+  random_state: 3407
+  bias: none
+
+train:
+  epochs: 5
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 2.0e-5
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  weight_decay: 0.01
+  bf16: true
+  fp16: false
+  seed: 3407
+  eval_strategy: epoch
+  logging_steps: 10
+  max_grad_norm: 1.0
+  allow_full_sequence_loss_fallback: false
+  wandb_enabled: false
+  wandb_project: discord-sft
+  wandb_entity: null
+  wandb_run_name: style-late-r16-a16-5epochs
+  wandb_tags: [style, late, lora]
+  tertiary_eval_enabled: true
+  tertiary_eval_tasks_checkpoint: [persona]
+  tertiary_eval_tasks_final: [persona]
+  tertiary_eval_out_dir: out/evals
+  tertiary_eval_profile_json: out/sft/profiles.json
+  tertiary_eval_limit: null
+  tertiary_eval_batch_size: 1
+
+checkpoint:
+  output_dir: out/lora/style-late-r16-a16-5epochs
+  save_strategy: epoch
+  save_steps: null
+  save_total_limit: 6
+  save_final: true
+
+# checkpoint saves trigger best-effort tertiary evals; final can run a broader suite.

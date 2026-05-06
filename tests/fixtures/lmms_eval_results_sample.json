@@ -1,0 +1,24 @@
+{
+  "results": {
+    "ifeval": {
+      "alias": "ifeval",
+      "prompt_level_strict_acc,none": 0.641,
+      "prompt_level_strict_acc_stderr,none": 0.012,
+      "inst_level_strict_acc,none": 0.73
+    },
+    "mmmu_val": {
+      "alias": "mmmu_val",
+      "mmmu_acc,none": 0.503
+    },
+    "mmstar": {
+      "alias": "mmstar",
+      "average,none": 0.572
+    },
+    "screenspot_v2": {
+      "alias": "screenspot_v2",
+      "accuracy,none": 0.612
+    }
+  },
+  "config": {},
+  "versions": {}
+}

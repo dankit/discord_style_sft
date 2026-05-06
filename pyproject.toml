@@ -1,0 +1,108 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "discord-sft"
+version = "0.2.0"
+description = "Ingest, curate, and SFT-build Discord DM exports into multi-persona ShareGPT JSONL, with heuristic and LLM-as-judge evaluation."
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "pyarrow>=15.0",
+    "datasketch>=1.6",
+]
+
+[project.optional-dependencies]
+tokenizers = ["transformers>=4.44", "tokenizers>=0.20"]
+lang = ["langdetect>=1.0.9"]
+ui = ["streamlit>=1.40", "pandas>=2.0"]
+evals = [
+    "lmms-eval>=0.7.0",
+    "transformers>=5.5.1",
+    # PEFT <0.18 breaks merge-peft / adapter load with transformers 5.5+
+    # (e.g. WeightConverter ... unexpected keyword 'distributed_operation').
+    "accelerate>=0.30",
+    "peft>=0.18.0",
+    "torch>=2.4,<2.11",
+    "vllm>=0.19.1,<0.20; sys_platform == 'linux' and platform_machine == 'aarch64'",
+    "openai>=1.40",
+    "httpx>=0.27",
+]
+# Bleeding-edge GPU eval (Qwen3.5 MoE + shared vLLM + lmms-eval): use with `[evals]`
+# on Linux so the resolver picks git pins over PyPI, e.g.
+#   uv sync --extra evals --extra evals-gpu
+# GH200 stacks: run `scripts/setup_gh200_evals.sh` for vLLM pre-built wheels
+# (uv --torch-backend / PyTorch CUDA index per vLLM GPU install docs).
+# Re-run `scripts/bootstrap_lmms_eval_env.py` after any sync.
+evals-gpu = [
+    "lmms-eval @ git+https://github.com/EvolvingLMMs-Lab/lmms-eval.git@4caa4a67ee03640734e824449ea10afa60c71719",
+    "transformers[serving] @ git+https://github.com/huggingface/transformers.git@main",
+    "tokenizers>=0.22.0,<=0.23.0",
+]
+train = [
+    # Unsloth: torch<2.11, transformers<=5.5.0, datasets <4.4 (GH200 README).
+    # Transformers v5-only for Qwen3.5 (Unsloth readme); !=5.0.0,!=5.1.0 -> floor 5.0.1 + !=5.1.0.
+    # Not combinable with [evals] / vLLM.
+    "unsloth>=2026.4.8",
+    "trl>=0.18.2,<=0.24.0,!=0.19.0",
+    "transformers>=5.0.1,<=5.5.0,!=5.1.0",
+    "peft>=0.18.0",
+    "accelerate>=0.34.1",
+    "datasets>=3.4.1,<4.4.0,!=4.0.*,!=4.1.0",
+    "torch>=2.4,<2.11",
+    "pyyaml>=6.0",
+    # Optional at runtime via train.wandb_enabled; installed so GH200 / lock
+    # setups match shipped YAML that enables W&B without extra pip steps.
+    "wandb>=0.16.0",
+]
+dev = ["pytest>=7.0", "pyyaml>=6.0"]
+
+# Ranking JSON only needs stdlib; PNG plots require pandas/matplotlib/seaborn.
+probe_visualization = ["pandas>=2.0", "matplotlib>=3.8", "seaborn>=0.13"]
+
+[project.scripts]
+discord-sft = "discord_sft.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["discord_sft*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# ---------------------------------------------------------------------------
+# uv configuration
+#
+# The lockfile targets Linux aarch64 (GH200-style eval hosts) because that's
+# where the heavy extras are expected to work:
+#   - Unsloth/Triton are Linux-only for this workflow.
+#   - vLLM is declared for Linux aarch64 in `[evals]`.
+# A fully cross-platform lock is therefore unattainable for the `[train]`
+# and `[evals]` extras; attempting one fails resolution on macOS / Windows.
+#
+# Intended workflow:
+#   - Training / eval boxes (Linux aarch64, e.g. GH200): `uv sync --extra train` or
+#     `uv sync --extra evals` / `uv sync --extra evals --extra evals-gpu` —
+#     reproduces the locked environment exactly.
+#   - macOS / Windows dev: use `uv pip install -e "."` (base deps only:
+#     ingest / curate / build-sft / stats / ui). Skip the lockfile.
+#
+# Regenerate with `uv lock` whenever [project] / optional-dependencies change.
+# ---------------------------------------------------------------------------
+[tool.uv]
+environments = [
+    "sys_platform == 'linux' and platform_machine == 'aarch64'",
+]
+# Unsloth: transformers<=5.5.0 and torch<2.11 vs [evals] (torch<2.11 + vLLM 0.19 + transformers>=5.5.1).
+# evals-gpu pins transformers@main — never resolve together with [train].
+conflicts = [
+    [
+        { extra = "train" },
+        { extra = "evals-gpu" },
+    ],
+    [
+        { extra = "train" },
+        { extra = "evals" },
+    ],
+]

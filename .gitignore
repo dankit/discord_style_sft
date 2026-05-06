@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.env
+.venv/
+_out_test/
+_smoke_out/
+package/
+messages/
+!tests/fixtures/**/*.json
+discord_messages/
+out/
