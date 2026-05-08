@@ -36,7 +36,7 @@ to Discord, conversation participants, and third-party services you call.
 | ----- | ----- |
 | Training (Unsloth, `uv`/lockfile, GH200, merge-peft, W&B, config keys, gotchas) | [`discord_sft/training/README.md`](discord_sft/training/README.md) |
 | Evaluation (`lmms-eval`, bootstrap, vLLM, benchmarks, artifacts, scope limits) | [`discord_sft/evals/README.md`](discord_sft/evals/README.md) |
-| Shipped YAML recipes and LoRA module guide | [`discord_sft/training/configs/README.md`](discord_sft/training/configs/README.md) |
+| Shipped YAML recipes for LoRA | [`discord_sft/training/configs/`](discord_sft/training/configs/) |
 | Gradient probe matrix and probe → eval workflow | [`discord_sft/training/lora_search/README.md`](discord_sft/training/lora_search/README.md) |
 
 ## Install
